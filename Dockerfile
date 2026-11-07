@@ -4,9 +4,13 @@ ARG COMPOSE_VERSION=v2.39.4
 RUN apt-get update && apt-get install -y --no-install-recommends docker.io ca-certificates curl \
     && mkdir -p /usr/local/lib/docker/cli-plugins \
     && arch="$(dpkg --print-architecture)" \
-    && case "$arch" in amd64|arm64) ;; *) echo "Unsupported architecture: $arch"; exit 1;; esac \
+    && case "$arch" in \
+         amd64) compose_arch=x86_64 ;; \
+         arm64) compose_arch=aarch64 ;; \
+         *) echo "Unsupported architecture: $arch"; exit 1 ;; \
+       esac \
     && curl --fail --location --retry 3 --silent --show-error \
-       "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-${arch}" \
+       "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-linux-${compose_arch}" \
        -o /usr/local/lib/docker/cli-plugins/docker-compose \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-compose \
     && docker compose version \
