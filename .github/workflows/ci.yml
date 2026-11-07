@@ -29,7 +29,7 @@ jobs:
       - name: Start the container and check health
         run: |
           docker run -d --name panel-ci -e PANEL_ENV=test -e PANEL_DOCKER_ENABLED=false -p 127.0.0.1:9090:9090 sunucukontrol:ci
-          curl --fail --show-error --silent --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:9090/healthz || {
+          curl --fail --show-error --silent --max-time 5 --retry 10 --retry-all-errors --retry-delay 2 http://127.0.0.1:9090/healthz || {
             docker logs panel-ci
             exit 1
           }
