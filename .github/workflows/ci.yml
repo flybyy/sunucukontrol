@@ -1,0 +1,33 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m compileall -q app
+      - run: python -m pytest -q
+      - run: python -m pip install pip-audit
+      - run: pip-audit -r requirements.txt
+      - name: Validate Compose configuration
+        run: |
+          cp .env.example .env
+          docker compose config -q
+      - run: docker build -t sunucukontrol:ci .
+      - name: Start the container and check health
+        run: |
+          docker run -d --name panel-ci -e PANEL_ENV=test -e PANEL_DOCKER_ENABLED=false -p 127.0.0.1:9090:9090 sunucukontrol:ci
+          curl --fail --show-error --silent --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:9090/healthz || {
+            docker logs panel-ci
+            exit 1
+          }

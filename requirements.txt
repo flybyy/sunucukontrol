@@ -1,0 +1,8 @@
+fastapi>=0.116.1,<1
+uvicorn[standard]>=0.35,<1
+psutil>=7,<9
+python-multipart>=0.0.20,<1
+argon2-cffi>=25.1,<26
+itsdangerous>=2.2,<3
+paramiko>=5.0.1,<6
+pyotp>=2.9,<3

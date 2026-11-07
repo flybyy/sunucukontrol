@@ -1,0 +1,31 @@
+name: sunucukontrol
+services:
+  panel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sunucukontrol:local
+    restart: unless-stopped
+    init: true
+    env_file:
+      - path: .env
+        format: raw
+    ports:
+      - "127.0.0.1:${PANEL_PORT:-9090}:9090"
+    volumes:
+      - panel_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      # For remote SSH monitoring, provide read-only keys (never commit secrets):
+      # - ./secrets/fleet_ssh_key:/run/secrets/fleet_ssh_key:ro
+      # - ./secrets/fleet_known_hosts:/run/secrets/fleet_known_hosts:ro
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9090/healthz',timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+volumes:
+  panel_data:

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>SunucuKontrol</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <section id="loginView" class="login-shell">
+    <div class="login-card">
+      <div class="brand-lockup">
+        <div class="brand-mark">V</div>
+        <div><strong>SUNUCU</strong><span>KONTROL</span></div>
+      </div>
+      <div class="login-copy">
+        <h1>Yönetim Paneli</h1>
+        <p>Yayınlar, Minecraft sunucuları, yedekler, güvenlik ve sistem sağlığı tek panelde.</p>
+      </div>
+      <label>Kullanıcı adı<input id="loginUser" autocomplete="username" value="admin"></label>
+      <label>Şifre<input id="loginPass" type="password" autocomplete="current-password"></label>
+      <label>2FA kodu (etkinse)<input id="loginOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 haneli kod"></label>
+      <button id="loginButton" class="btn primary wide">Giriş yap</button>
+      <p id="loginMessage" class="form-message"></p>
+      <div class="login-foot">Cloudflare Access + yerel oturum koruması için tasarlanmıştır.</div>
+    </div>
+  </section>
+
+  <div id="appView" class="app-shell" hidden>
+    <aside class="sidebar">
+      <div class="brand-lockup side-brand">
+        <div class="brand-mark">V</div>
+        <div><strong>SUNUCU</strong><span>KONTROL</span></div>
+      </div>
+      <nav id="nav">
+        <button class="nav-item active" data-page="overview">Genel Bakış</button>
+        <button class="nav-item" data-page="fleet">Uzak Sunucular</button>
+        <button class="nav-item" data-page="catalog">Uygulama Kataloğu</button>
+        <button class="nav-item" data-page="projects">Projeler</button>
+        <button class="nav-item mc-nav" data-page="minecraft"><span class="nav-pulse"></span>Minecraft</button>
+        <button class="nav-item" data-page="deploy">Yayın Merkezi</button>
+        <button class="nav-item" data-page="backups">Yedekler</button>
+        <button class="nav-item" data-page="domains">Domain & SSL</button>
+        <button class="nav-item" data-page="security">Güvenlik</button>
+        <button class="nav-item" data-page="files">Dosya Kasası</button>
+        <button class="nav-item" data-page="events">Olay Geçmişi</button>
+        <button class="nav-item" data-page="maintenance">Bakım</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="status-line"><span id="sideOnlineDot" class="status-dot"></span><span id="sideHost">Sunucu</span></div>
+        <small id="sideUptime">-</small>
+        <button id="logoutButton" class="btn ghost compact">Çıkış</button>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">SUNUCU INFRASTRUCTURE</p>
+          <h1 id="pageTitle">Genel Bakış</h1>
+        </div>
+        <div class="top-actions">
+          <div id="internetBadge" class="badge neutral">İnternet kontrol ediliyor</div>
+          <button id="refreshButton" class="btn ghost">Yenile</button>
+        </div>
+      </header>
+
+      <section class="page" data-page-panel="fleet">
+        <article class="panel"><div class="panel-head"><h2>Uzak Sunucular (SSH)</h2></div>
+          <p>Yalnızca doğrulanmış SSH anahtarı ve known_hosts ile salt okunur durum sorgusu. Terminal veya uzaktan komut yürütme bu sürümde kapalıdır.</p>
+          <form id="fleetForm" class="fleet-form"><input id="fleetName" placeholder="Sunucu adı" required maxlength="64"><input id="fleetHost" placeholder="Örnek: vps.example.com" required><input id="fleetUser" placeholder="SSH kullanıcı" required value="monitor"><input id="fleetPort" type="number" value="22" min="1" max="65535"><button class="btn primary" type="submit">Sunucu ekle</button></form>
+          <div id="fleetList" class="stack-list"></div><pre id="fleetOutput" class="result-box" style="white-space:pre-wrap"></pre>
+        </article>
+      </section>
+      <section class="page" data-page-panel="catalog"><article class="panel"><h2>Uygulama kataloğu</h2><p>Onaylı servis şablonlarını inceleyin. Güvenlik için tek tıkla kurulum henüz etkin değildir.</p><div id="catalogList" class="stack-list"></div></article></section>
+      <section class="page active" data-page-panel="overview">
+        <div class="metric-grid">
+          <article class="metric-card"><div class="metric-head"><span>CPU</span><span id="cpuStatus" class="mini-status"></span></div><strong id="cpuValue">-</strong><div class="spark"><svg id="cpuChart" viewBox="0 0 300 64" preserveAspectRatio="none"></svg></div><small id="cpuDetail">-</small></article>
+          <article class="metric-card"><div class="metric-head"><span>RAM</span><span id="ramStatus" class="mini-status"></span></div><strong id="ramValue">-</strong><div class="spark"><svg id="ramChart" viewBox="0 0 300 64" preserveAspectRatio="none"></svg></div><small id="ramDetail">-</small></article>
+          <article class="metric-card"><div class="metric-head"><span>Disk</span><span id="diskStatus" class="mini-status"></span></div><strong id="diskValue">-</strong><div class="spark"><svg id="diskChart" viewBox="0 0 300 64" preserveAspectRatio="none"></svg></div><small id="diskDetail">-</small></article>
+          <article class="metric-card"><div class="metric-head"><span>Sıcaklık</span><span id="tempStatus" class="mini-status"></span></div><strong id="tempValue">-</strong><div class="spark"><svg id="tempChart" viewBox="0 0 300 64" preserveAspectRatio="none"></svg></div><small id="tempDetail">-</small></article>
+        </div>
+
+        <div class="grid cols-2">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">CANLI DURUM</p><h2>Docker servisleri</h2></div><span id="containerSummary" class="badge neutral">-</span></div>
+            <div id="containerList" class="stack-list"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">SUNUCU</p><h2>Altyapı özeti</h2></div></div>
+            <div class="kv-grid">
+              <div><span>Hostname</span><strong id="hostValue">-</strong></div>
+              <div><span>Yerel IP</span><strong id="ipValue">-</strong></div>
+              <div><span>Boş alan</span><strong id="freeDiskValue">-</strong></div>
+              <div><span>Uptime</span><strong id="uptimeValue">-</strong></div>
+              <div><span>Network RX</span><strong id="netRecvValue">-</strong></div>
+              <div><span>Network TX</span><strong id="netSentValue">-</strong></div>
+            </div>
+            <div class="health-strip">
+              <div><span class="status-dot" id="dockerDot"></span>Docker <b id="dockerState">-</b></div>
+              <div><span class="status-dot" id="ufwDot"></span>UFW <b id="ufwState">-</b></div>
+              <div><span class="status-dot" id="panelDot"></span>Sunucu Paneli <b id="panelState">-</b></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="grid cols-3">
+          <article class="panel compact-panel"><p class="eyebrow">UPS</p><h3 id="upsTitle">UPS algılanmadı</h3><p id="upsDetail" class="muted">NUT veya APCUPSD bağlandığında pil ve çalışma süresi burada görünür.</p></article>
+          <article class="panel compact-panel"><p class="eyebrow">BİLDİRİMLER</p><h3 id="notifyTitle">Kanal bekleniyor</h3><p id="notifyDetail" class="muted">Telegram, ntfy veya webhook durumunu gösterir.</p><button id="notificationTestButton" class="btn ghost compact">Test bildirimi</button></article>
+          <article class="panel compact-panel"><p class="eyebrow">SON OLAY</p><h3 id="lastEventTitle">Olay yok</h3><p id="lastEventDetail" class="muted">-</p></article>
+        </div>
+      </section>
+
+      <section class="page" data-page-panel="projects">
+        <div class="section-actions"><div><p class="section-copy">Docker Compose projelerini kaydet, domain/health bilgilerini tanımla ve otomatik yedek politikasını yönet.</p></div><button id="newProjectButton" class="btn primary">Yeni proje</button></div>
+        <div id="projectsGrid" class="project-grid"></div>
+        <article class="panel top-gap">
+          <div class="panel-head"><div><p class="eyebrow">DOCKER KEŞFİ</p><h2>Mevcut Compose projeleri</h2></div></div>
+          <div id="composeDiscovery" class="stack-list"></div>
+        </article>
+      </section>
+
+      <section class="page" data-page-panel="minecraft">
+        <div class="minecraft-hero panel">
+          <div>
+            <p class="eyebrow">MINECRAFT SUNUCU YÖNETİMİ</p>
+            <h2>Minecraft Sunucuları</h2>
+            <p class="section-copy">Kendi Minecraft sunucularını bu kasada oluştur, RAM ve port ayarla, başlat/durdur, konsolu izle ve dünya yedeği al.</p>
+          </div>
+          <div class="minecraft-hero-actions">
+            <span id="minecraftSummary" class="badge neutral">Sunucular yükleniyor</span>
+            <button id="newMinecraftButton" class="btn primary">+ Yeni Minecraft Sunucusu</button>
+          </div>
+        </div>
+
+        <div id="minecraftGrid" class="minecraft-grid top-gap"></div>
+
+        <div class="grid cols-2 top-gap">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">CANLI KONSOL</p><h2 id="minecraftConsoleTitle">Sunucu seç</h2></div><span id="minecraftConsoleState" class="badge neutral">-</span></div>
+            <pre id="minecraftLogs" class="terminal minecraft-terminal">Bir Minecraft sunucusunun “Konsol” butonuna bas.</pre>
+            <div class="minecraft-command-row">
+              <input id="minecraftCommand" placeholder="örn. say Sunucu bakıma giriyor" autocomplete="off">
+              <button id="minecraftCommandButton" class="btn primary" disabled>Komut gönder</button>
+            </div>
+            <p class="hint">Komutlar yalnızca Minecraft RCON'a gönderilir; host shell erişimi verilmez.</p>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">OYUN ALTYAPISI</p><h2>Güvenli varsayılanlar</h2></div></div>
+            <div class="security-checks">
+              <div><span class="status-dot on"></span><div><b>Docker izolasyonu</b><small>Her oyun sunucusu ayrı container ve veri klasöründe çalışır.</small></div></div>
+              <div><span class="status-dot on"></span><div><b>Premium doğrulama</b><small>Online-mode varsayılan olarak açık gelir.</small></div></div>
+              <div><span class="status-dot on"></span><div><b>Kontrollü RCON</b><small>RCON portu dışarı açılmaz; komutlar panel üzerinden container içine iletilir.</small></div></div>
+              <div><span class="status-dot on"></span><div><b>Dünya yedeği</b><small>Tek tuşla data klasörü sıkıştırılır ve Sunucu Paneli veri alanında saklanır.</small></div></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="page" data-page-panel="deploy">
+        <div class="grid cols-2">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">PAKET</p><h2>Yeni sürüm yükle</h2></div></div>
+            <label>ZIP paketi<input id="deployZip" type="file" accept=".zip"></label>
+            <button id="uploadDeployZipButton" class="btn primary">ZIP'i sunucuya yükle</button>
+            <div id="uploadResult" class="result-box">Henüz dosya yüklenmedi.</div>
+            <div class="field-grid top-gap">
+              <label>Proje<select id="deployProject"></select></label>
+              <label>Sürüm etiketi<input id="deployVersion" placeholder="örn. v5.9.5"></label>
+              <label class="full">Yüklü paket<select id="deployUpload"></select></label>
+            </div>
+            <button id="deployButton" class="btn primary wide">Kontrollü deploy başlat</button>
+            <p class="hint">Deploy öncesi otomatik yedek alınır. Health-check başarısızsa önceki release geri yüklenmeye çalışılır.</p>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">DEPLOY LOG</p><h2>İşlem çıktısı</h2></div><button id="clearDeployLogButton" class="btn ghost compact">Temizle</button></div>
+            <pre id="deployLog" class="terminal">Hazır.</pre>
+          </article>
+        </div>
+      </section>
+
+      <section class="page" data-page-panel="backups">
+        <div class="section-actions"><p class="section-copy">Veritabanı + uploads yedekleri proje politikasına göre otomatik alınır. Deploy ve rollback öncesi koruma yedeği oluşturulur.</p></div>
+        <div id="backupProjects" class="project-grid"></div>
+      </section>
+
+      <section class="page" data-page-panel="domains">
+        <div class="grid cols-2">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">PUBLIC CHECK</p><h2>DNS & SSL kontrolü</h2></div></div>
+            <label>Hostname<input id="domainCheckInput" placeholder="vitoriasport.com.tr"></label>
+            <button id="domainCheckButton" class="btn primary">Kontrol et</button>
+            <div id="domainCheckResult" class="result-box top-gap">Domain seçilmedi.</div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">CLOUDFLARE TUNNEL</p><h2>Domain yayınla</h2></div><span id="cfApiBadge" class="badge neutral">API kontrol ediliyor</span></div>
+            <label>Hostname<input id="cfHostname" placeholder="app.veribayt.com"></label>
+            <label>Origin service<input id="cfService" placeholder="http://localhost:8082"></label>
+            <button id="cfPublishButton" class="btn primary">DNS + Tunnel route oluştur</button>
+            <p class="hint">Bu özellik yalnızca CF API token, zone, account ve tunnel ID tanımlandıysa aktif olur.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="page" data-page-panel="security">
+        <div class="grid cols-2">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">FIREWALL</p><h2>UFW + Docker koruması</h2></div><span id="firewallBadge" class="badge neutral">-</span></div><div id="firewallDetails" class="code-details"></div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">ERİŞİM</p><h2>Güvenlik katmanları</h2></div></div><div class="security-checks"><div><span id="cfAccessDot" class="status-dot"></span><div><b>Cloudflare Access</b><small>Panel girişinden önce kimlik katmanı</small></div></div><div><span class="status-dot on"></span><div><b>Argon2 + Session + CSRF</b><small>Yerel panel oturum güvenliği</small></div></div><div><span class="status-dot on"></span><div><b>localhost:9090</b><small>Panel internete doğrudan port açmaz</small></div></div><div><span class="status-dot on"></span><div><b>Sandboxed File Vault</b><small>Web dosya işlemleri /srv/veribayt ile sınırlı</small></div></div></div></article>
+        </div>
+        <article class="panel top-gap"><div class="panel-head"><div><p class="eyebrow">INTERNET KESİNTİLERİ</p><h2>Bağlantı geçmişi</h2></div></div><div id="outageList" class="table-wrap"></div></article>
+      </section>
+
+      <section class="page" data-page-panel="files">
+        <div class="grid cols-2">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">DOSYA KASASI</p><h2>Sunucuya dosya yükle</h2></div></div><label>Dosya<input id="vaultFile" type="file"></label><button id="vaultUploadButton" class="btn primary">Dosyayı yükle</button><p class="hint">Dosyalar yalnızca /srv/veribayt/files altında tutulur; sistem dizinlerine web üzerinden yazılmaz.</p></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">DOSYALAR</p><h2>Kasa içeriği</h2></div></div><div id="vaultList" class="stack-list"></div></article>
+        </div>
+      </section>
+
+      <section class="page" data-page-panel="events">
+        <div class="grid cols-2">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">MONITOR</p><h2>Sistem olayları</h2></div></div><div id="eventList" class="timeline"></div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">AUDIT</p><h2>Yönetici işlem geçmişi</h2></div></div><div id="auditList" class="timeline"></div></article>
+        </div>
+      </section>
+
+      <section class="page" data-page-panel="maintenance">
+        <div class="grid cols-2">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">UBUNTU</p><h2>Sistem güncellemeleri</h2></div></div><button id="updateCheckButton" class="btn ghost">Güncellemeleri tara</button><div id="updateResult" class="result-box top-gap">Henüz taranmadı.</div><button id="updateApplyButton" class="btn warning top-gap">Mevcut paket güncellemelerini kur</button><p class="hint">Paket güncellemesi servisleri yeniden başlatabilir. Canlı trafik varken planlı bakım penceresinde kullan.</p></article>
+          <article class="panel danger-panel"><div class="panel-head"><div><p class="eyebrow">POWER</p><h2>Sunucu güç yönetimi</h2></div></div><p>Reboot veya poweroff tüm canlı projeleri etkiler. İşlem audit log'a kaydedilir.</p><div class="button-row"><button id="rebootButton" class="btn warning">Sunucuyu yeniden başlat</button><button id="poweroffButton" class="btn danger">Sunucuyu kapat</button></div></article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="projectDialog" class="modal">
+    <form method="dialog" id="projectForm">
+      <div class="modal-head"><div><p class="eyebrow">PROJECT PROFILE</p><h2>Proje ayarları</h2></div><button value="cancel" class="icon-button" aria-label="Kapat">×</button></div>
+      <div class="field-grid">
+        <label>Kısa ad<input id="pSlug" required placeholder="vitoria"></label>
+        <label>Görünen ad<input id="pName" required placeholder="Vitoria Sport"></label>
+        <label class="full">Compose project name<input id="pCompose" required placeholder="vitoria-sport-organization-v592-error-safe-production"></label>
+        <label>Domain<input id="pDomain" placeholder="vitoriasport.com.tr"></label>
+        <label>Health URL<input id="pHealth" placeholder="http://127.0.0.1:8081/health.php"></label>
+        <label>DB motoru<select id="pDbEngine"><option value="none">Yok</option><option value="mysql">MySQL</option><option value="mariadb">MariaDB</option><option value="postgres">PostgreSQL</option></select></label>
+        <label>DB service<input id="pDbService" value="db"></label>
+        <label>App service<input id="pAppService" value="app"></label>
+        <label>Uploads path<input id="pUploads" value="/var/www/html/uploads"></label>
+        <label>Yedek saati<select id="pBackupHour"></select></label>
+        <label>Saklanacak yedek<input id="pKeepBackups" type="number" min="1" max="60" value="7"></label>
+        <label class="check full"><input id="pAutoBackup" type="checkbox" checked> Otomatik yedekleme aktif</label>
+      </div>
+      <div class="modal-actions"><button value="cancel" class="btn ghost">Vazgeç</button><button id="saveProjectButton" value="default" class="btn primary">Kaydet</button></div>
+    </form>
+  </dialog>
+
+
+  <dialog id="minecraftDialog" class="modal">
+    <form method="dialog" id="minecraftForm">
+      <div class="modal-head"><div><p class="eyebrow">MINECRAFT SUNUCU AYARLARI</p><h2>Minecraft sunucusu</h2></div><button value="cancel" class="icon-button" aria-label="Kapat">×</button></div>
+      <div class="field-grid">
+        <label>Kısa ad<input id="mcSlug" required pattern="[a-z0-9][a-z0-9-]{1,31}" placeholder="survival"></label>
+        <label>Görünen ad<input id="mcName" required placeholder="Veribayt Survival"></label>
+        <label>Sunucu türü<select id="mcType"><option value="PAPER">Paper</option><option value="PURPUR">Purpur</option><option value="VANILLA">Vanilla</option></select></label>
+        <label>Minecraft sürümü<input id="mcVersion" value="LATEST" placeholder="LATEST veya 1.21.x"></label>
+        <label>RAM (MB)<input id="mcMemory" type="number" min="1024" max="32768" step="512" value="4096"></label>
+        <label>Maks. oyuncu<input id="mcPlayers" type="number" min="1" max="500" value="20"></label>
+        <label>Port<input id="mcPort" type="number" min="1024" max="65535" value="25565"></label>
+        <label>Zorluk<select id="mcDifficulty"><option value="peaceful">Peaceful</option><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="hard">Hard</option></select></label>
+        <label class="full">MOTD<input id="mcMotd" maxlength="180" value="Veribayt Minecraft Server"></label>
+        <label class="full">Minecraft sayfası açıklaması<input id="mcDescription" maxlength="220" placeholder="Arkadaş grubumuzun survival dünyası"></label>
+        <label>Site erişimi<select id="mcAccessMode"><option value="public">Şifresiz / herkese açık</option><option value="password">Şifreli</option></select></label>
+        <label>Paylaşım şifresi<input id="mcAccessPassword" type="password" maxlength="64" placeholder="Şifreliyse yaz; düzenlemede boş = aynı kalsın"></label>
+        <label class="full">Public hostname / IP<input id="mcPublicHost" placeholder="mc.veribayt.com veya public IP"></label>
+        <label class="check"><input id="mcPublished" type="checkbox" checked> Veribayt /minecraft sayfasında yayınla</label>
+        <label class="check"><input id="mcWhitelistEnabled" type="checkbox"> Minecraft whitelist kullan</label>
+        <label class="full">Whitelist oyuncuları<input id="mcWhitelistPlayers" placeholder="Murat123, Arkadas1, Arkadas2"></label>
+        <label class="check"><input id="mcOnlineMode" type="checkbox" checked> Online-mode açık</label>
+        <label class="check"><input id="mcAutoStart" type="checkbox" checked> Host açılışında otomatik başlat</label>
+      </div>
+      <div class="modal-actions"><button value="cancel" class="btn ghost">Vazgeç</button><button id="saveMinecraftButton" value="default" class="btn primary">Kaydet</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="logsDialog" class="modal large-modal">
+    <form method="dialog"><div class="modal-head"><div><p class="eyebrow">CONTAINER LOG</p><h2 id="logsTitle">Log</h2></div><button value="cancel" class="icon-button">×</button></div><pre id="logsOutput" class="terminal tall"></pre></form>
+  </dialog>
+
+  <dialog id="projectDetailDialog" class="modal large-modal">
+    <form method="dialog"><div class="modal-head"><div><p class="eyebrow">PROJECT</p><h2 id="projectDetailTitle">Proje</h2></div><button value="cancel" class="icon-button">×</button></div><div id="projectDetailBody"></div></form>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
